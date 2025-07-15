@@ -1,12 +1,27 @@
-import { useState } from 'react'
+import { useState } from "react";
 
 function App() {
   const [url, setUrl] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Submitted URL:", url);
-    // We'll connect this to the backend later
+
+    try {
+      const response = await fetch("http://localhost:8000/generate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ url }),
+      });
+
+      const data = await response.json();
+      console.log("Backend response:", data);
+      alert("URL received by backend!");
+    } catch (error) {
+      console.error("Error sending to backend:", error);
+      alert("Something went wrong.");
+    }
   };
 
   return (
