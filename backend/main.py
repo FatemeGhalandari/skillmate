@@ -40,7 +40,7 @@ def extract_video_id(youtube_url: str) -> str | None:
     return None
 
 # Function to ask OpenRouter API for course generation
-async def ask_openrouter(prompt: str, model: str ="mistralai/mistral-7b-instruct") -> str:
+async def ask_openrouter(prompt: str, model: str = "moonshotai/kimi-k2:free") -> str:
     headers = {
         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
         "Content-Type": "application/json",
@@ -53,10 +53,10 @@ async def ask_openrouter(prompt: str, model: str ="mistralai/mistral-7b-instruct
             {"role": "user", "content": prompt}
         ]
     }
-    print("Sending prompt length:", len(prompt))
-    print("Prompt (preview):", prompt[:200])
-    print("Headers:", headers)
-    print("Payload:", payload)
+    # print("Sending prompt length:", len(prompt))
+    # print("Prompt (preview):", prompt[:200])
+    # print("Headers:", headers)
+    # print("Payload:", payload)
 
 
     async with httpx.AsyncClient() as client:
@@ -84,12 +84,25 @@ async def generate_course(request: Request):
         MAX_CHARS = 3000  # or ~1000–1500 words
         truncated = full_text[:MAX_CHARS]
 
-        prompt = (
-            f"Summarize this YouTube transcript into a mini course.\n"
-            f"Break it into 3–5 modules with titles, learning objectives, and descriptions:\n"
-            f"Then generate 5 flashcards as Q&A pairs in this format:\n"
-            f"Q: ...\nA: ...\n\nUse clear and complete questions and answers based on the transcript.\n\nTranscript:\n{truncated}"
-        )
+        prompt = f"""
+        Summarize this YouTube transcript into a mini course.
+
+        Break it into 3–5 modules with titles, learning objectives, and a short description for each.
+
+        ---
+
+        Then, generate a section titled Flashcards:
+        List 4–6 clearly formatted flashcards like this:
+        Flashcards:
+        1. Q: ...
+        A: ...
+
+        ---
+
+        Here is the transcript:
+        {transcript}
+        """
+
         llm_response = await ask_openrouter(prompt)
 
 
