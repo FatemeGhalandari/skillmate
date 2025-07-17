@@ -86,7 +86,9 @@ async def generate_course(request: Request):
 
         prompt = (
             f"Summarize this YouTube transcript into a mini course.\n"
-            f"Break it into 3–5 modules with titles, learning objectives, and a short description for each:\n\n{truncated}"
+            f"Break it into 3–5 modules with titles, learning objectives, and descriptions:\n"
+            f"Then generate 5 flashcards as Q&A pairs in this format:\n"
+            f"Q: ...\nA: ...\n\nUse clear and complete questions and answers based on the transcript.\n\nTranscript:\n{truncated}"
         )
         llm_response = await ask_openrouter(prompt)
 
