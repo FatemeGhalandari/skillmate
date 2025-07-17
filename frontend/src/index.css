@@ -1,6 +1,17 @@
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap");
+
 @import "tailwindcss/preflight";
 @import "tailwindcss/utilities";
 @import "tailwindcss";
+
+@theme {
+  --font-montserrat: Montserrat, "sans-serif";
+  --font-open-sans: "Open Sans", sans-serif;
+}
+
+body{
+  font-family: 'Montserrat', sans-serif;
+}
 
 .perspective {
   perspective: 1000px;
