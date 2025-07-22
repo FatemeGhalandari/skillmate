@@ -1,6 +1,7 @@
 # SkillMate 🎓🤖
 
 SkillMate is an AI-powered tool that transforms **YouTube videos** into **mini courses** with:
+
 - 📚 Summaries
 - 💡 Course Modules
 - 💬 Flashcards (interactive, scrollable, and flippable)
@@ -17,13 +18,14 @@ SkillMate uses an open-source LLM (via **OpenRouter**) to analyze YouTube transc
 - ✅ 3–5 structured learning modules (with objectives and descriptions)
 - ✅ Flashcards with Q&A for self-testing
 
-**Model in use**: [`moonshotai/kimi-k2:free`](https://openrouter.ai/moonshotai/kimi-k2:free) (via OpenRouter API)  
+**Model in use**: [`moonshotai/kimi-k2:free`](https://openrouter.ai/moonshotai/kimi-k2:free) (via OpenRouter API)
 
 ---
 
 ## 🛠 Tech Stack
 
 ### Frontend:
+
 - **React.js** + **Vite**
 - **Tailwind CSS** (v4)
 - Interactive UI with:
@@ -32,6 +34,7 @@ SkillMate uses an open-source LLM (via **OpenRouter**) to analyze YouTube transc
   - Clean responsive layout
 
 ### Backend:
+
 - **Python 3.10**
 - **FastAPI**: Serves as the backend for handling:
   - YouTube URL processing
@@ -39,14 +42,39 @@ SkillMate uses an open-source LLM (via **OpenRouter**) to analyze YouTube transc
   - Requesting and parsing LLM completions
 
 ### AI:
+
 - **OpenRouter**: Proxy API for open-source LLMs
 - **Model**: `moonshotai/kimi-k2:free`
 
 ---
 
-## ⚙️ Setup Instructions
+## 📸 Screenshots
 
-### 1. Clone the Repository
-```bash
-git clone https://github.com/your-username/skillmate.git
-cd skillmate
+### 🏠 Homepage
+
+A clean and simple UI for users to enter a YouTube URL and generate an AI-powered course.
+
+**Desktop View**  
+![Homepage Desktop](/assets/1.png)
+**Mobile View**
+<img src="/assets/7.png" alt="Homepage Mobile" width="250"/>
+
+---
+
+### 🧠 AI Summary
+
+Summarized content from the video, broken into digestible learning modules.
+**Desktop View**
+![Summary](/assets/6.png)
+**Mobile View**
+<img src="/assets/9.png" alt="Homepage Mobile" width="250"/>
+
+---
+
+### 💡 Flashcards
+
+Interactive flashcards auto-generated from video content, designed to reinforce learning.
+**Desktop View**
+![Flashcards](/assets/3.png)
+**Mobile View**
+<img src="/assets/8.png" alt="Homepage Mobile" width="250"/>
