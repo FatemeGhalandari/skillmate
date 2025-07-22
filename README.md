@@ -55,18 +55,18 @@ SkillMate uses an open-source LLM (via **OpenRouter**) to analyze YouTube transc
 A clean and simple UI for users to enter a YouTube URL and generate an AI-powered course.
 
 **Desktop View**  
-![Homepage Desktop](/assets/1.png)
-**Mobile View**
+![Homepage Desktop](/assets/1.png)  
+**Mobile View**  
 <img src="/assets/7.png" alt="Homepage Mobile" width="250"/>
 
 ---
 
 ### 🧠 AI Summary
 
-Summarized content from the video, broken into digestible learning modules.
-**Desktop View**
-![Summary](/assets/6.png)
-**Mobile View**
+Summarized content from the video, broken into digestible learning modules.  
+**Desktop View**  
+![Summary](/assets/6.png)  
+**Mobile View**  
 <img src="/assets/9.png" alt="Homepage Mobile" width="250"/>
 
 ---
@@ -74,7 +74,7 @@ Summarized content from the video, broken into digestible learning modules.
 ### 💡 Flashcards
 
 Interactive flashcards auto-generated from video content, designed to reinforce learning.
-**Desktop View**
-![Flashcards](/assets/3.png)
-**Mobile View**
+**Desktop View**  
+![Flashcards](/assets/3.png)  
+**Mobile View**  
 <img src="/assets/8.png" alt="Homepage Mobile" width="250"/>
