@@ -88,10 +88,10 @@ function App() {
   const [loading, setLoading] = useState(false);
 
   // Local:
-  const BACKEND_URL = "http://127.0.0.1:8000/generate";
+  // const BACKEND_URL = "http://127.0.0.1:8000/generate";
 
   // Hosted:
-  // const BACKEND_URL = "https://skillmate-backend.onrender.com/generate";
+  const BACKEND_URL = "https://skillmate-backend.onrender.com/generate";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
