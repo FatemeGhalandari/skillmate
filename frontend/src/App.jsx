@@ -1,7 +1,5 @@
 import { useState } from "react";
 import FlashcardList from "./components/FlashcardList";
-// import { mockData } from "./mockData";
-
 import Summary from "./components/Summary";
 import Transcript from "./components/Transcript";
 
@@ -11,16 +9,18 @@ function App() {
   const [summary, setSummary] = useState("");
   const [modules, setModules] = useState([]);
   const [flashcards, setFlashcards] = useState([]);
-  // const [flippedIndex, setFlippedIndex] = useState(null);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Simulate backend delay
-    // setTimeout(() => {
-    //   setSummary(mockData.summary);
-    //   setTranscript(mockData.transcript);
-    //   setFlashcards(mockData.flashcards);
-    // }, 300); // optional small delay
+
+    setLoading(true);
+    setError("");
+    setTranscript("");
+    setSummary("");
+    setModules([]);
+    setFlashcards([]);
 
     try {
       const response = await fetch(
@@ -31,26 +31,22 @@ function App() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({ url }),
-        }
+        },
       );
 
       const data = await response.json();
-      console.log("Backend response:", data);
-      // alert("URL received by backend!");
 
-      // 🟩 Extract transcript
-      const transcript = data.transcript || "No transcript found.";
+      if (!response.ok || data.error) {
+        throw new Error(data.error || "Backend request failed.");
+      }
 
-      // Store full summary for parsing
+      const transcriptText = data.transcript || "";
       const fullSummary = data.summary || "";
-      // 🟢 Step 1: Split full summary into parts
+
       const flashcardSection =
         fullSummary.split("Flashcards:")[1]?.trim() || "";
-      console.log("Flashcard raw section:", flashcardSection);
-
       const summaryOnly = fullSummary.split("Flashcards:")[0].trim();
 
-      // 🟩 Extract course modules
       const moduleBlocks = fullSummary.split(/Module\s+\d+:/i).slice(1);
       const parsedModules = moduleBlocks.map((block) => {
         const title = block.match(/^(.*)/)?.[1]?.trim() || "Untitled Module";
@@ -63,54 +59,54 @@ function App() {
         return { title, objective, description };
       });
 
-      // 🟢 Step 2: Parse flashcards from only Flashcards section
       const flashcardMatches =
         flashcardSection.match(
-          /\d+\.\s*Q:\s*.*?\n\s*A:\s*.*?(?=\n\d+\.|$)/gs
+          /\d+\.\s*Q:\s*.*?\n\s*A:\s*.*?(?=\n\d+\.|$)/gs,
         ) || [];
+
       const parsedCards = flashcardMatches.map((entry) => {
         const question = entry.match(/Q:\s*(.*)/)?.[1]?.trim() || "";
         const answer = entry.match(/A:\s*(.*)/)?.[1]?.trim() || "";
         return { question, answer };
       });
 
-      // ✅ Now set states in order
-      setTranscript(transcript);
+      setTranscript(transcriptText);
       setModules(parsedModules);
       setSummary(summaryOnly);
       setFlashcards(parsedCards);
-    } catch (error) {
-      console.error("Error sending to backend:", error);
-      alert("Something went wrong.");
+    } catch (err) {
+      console.error("Error sending to backend:", err);
+      setError(err.message || "Something went wrong.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
-      <div className="flex flex-col items-center mb-8">
-        <img src="/logo2.png" alt="SkillMate Logo" className="mb-2 h-10 w-14" />
-        <h1 className="text-4xl font-bold text-[#0D2344] mb-6 ">SkillMate</h1>
-      </div>
       <form onSubmit={handleSubmit} className="w-full max-w-md">
-        <label className="block mb-2 text-lg font-medium text-gray-700 ">
-          Paste a YouTube Link
-        </label>
         <input
           type="url"
           placeholder="https://www.youtube.com/watch?v=..."
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           required
-          className="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring focus:ring-blue-200 focus:outline-none"
+          className="w-full p-3 border border-gray-300 rounded-lg"
         />
-
         <button
           type="submit"
-          className="mt-4 w-full bg-[#0D2344] text-white font-semibold py-3 rounded-lg hover:bg-[#153a73] transition"
+          disabled={loading}
+          className="mt-4 w-full bg-[#0D2344] text-white font-semibold py-3 rounded-lg"
         >
-          Generate Course
+          {loading ? "Generating..." : "Generate Course"}
         </button>
       </form>
+
+      {error && (
+        <div className="mt-6 w-full max-w-3xl rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
+          {error}
+        </div>
+      )}
 
       {flashcards.length > 0 && <FlashcardList flashcards={flashcards} />}
       {summary && <Summary summary={summary} />}
