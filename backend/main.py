@@ -1,7 +1,8 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request,HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from youtube_transcript_api import YouTubeTranscriptApi
 from urllib.parse import urlparse, parse_qs
+from fastapi.responses import JSONResponse
 
 import httpx
 import os
@@ -66,51 +67,57 @@ async def ask_openrouter(prompt: str, model: str = "moonshotai/kimi-k2:free") ->
         return data["choices"][0]["message"]["content"]
 
 
+from fastapi import FastAPI, Request, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+
+# ... existing imports ...
+
 @app.post("/generate")
 async def generate_course(request: Request):
     data = await request.json()
     youtube_url = data.get("url")
+
+    video_id = extract_video_id(youtube_url)
+    if not video_id:
+        raise HTTPException(status_code=400, detail="Invalid YouTube URL")
+
     try:
-        # Extract the video ID
-        # parsed_url = urlparse(youtube_url)
-        # video_id = parse_qs(parsed_url.query).get("v", [None])[0]
-
-        video_id = extract_video_id(youtube_url)
-        if not video_id:
-            return {"error": "Invalid YouTube URL"}
-
         transcript = YouTubeTranscriptApi.get_transcript(video_id)
+    except Exception as e:
+        return JSONResponse(
+            status_code=502,
+            content={"error": f"Transcript fetch failed: {str(e)}"},
+        )
+
+    try:
         full_text = " ".join([entry["text"] for entry in transcript])
-        MAX_CHARS = 3000  # or ~1000–1500 words
-        truncated = full_text[:MAX_CHARS]
+        truncated = full_text[:3000]
 
         prompt = f"""
-        Summarize this YouTube transcript into a mini course.
+Summarize this YouTube transcript into a mini course.
+Break it into 3–5 modules with titles, learning objectives, and a short description for each.
 
-        Break it into 3–5 modules with titles, learning objectives, and a short description for each.
+Then generate a section titled Flashcards:
+List 4–6 clearly formatted flashcards like this:
 
-        ---
+Flashcards:
+1. Q: ...
+A: ...
 
-        Then, generate a section titled Flashcards:
-        List 4–6 clearly formatted flashcards like this:
-        Flashcards:
-        1. Q: ...
-        A: ...
-
-        ---
-
-        Here is the transcript:
-        {transcript}
-        """
-
+Here is the transcript:
+{truncated}
+"""
         llm_response = await ask_openrouter(prompt)
-
 
         return {
             "video_id": video_id,
             "transcript": full_text[:1000] + "...",
-            "summary": llm_response.strip()
+            "summary": llm_response.strip(),
         }
 
     except Exception as e:
-        return {"error": str(e)}
+        return JSONResponse(
+            status_code=500,
+            content={"error": f"LLM generation failed: {str(e)}"},
+        )
