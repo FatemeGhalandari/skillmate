@@ -1,10 +1,24 @@
-export default function Summary({ summary }) {
+function Summary({ summary }) {
+  if (!summary) return null;
+
+  const paragraphs = summary
+    .split(/\n{2,}/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+
   return (
-    <div className="mt-10 max-w-4xl mx-auto">
-      <h2 className="text-2xl font-semibold mb-2 text-[#0D2344]">Summary</h2>
-      <p className="text-gray-700 bg-white p-4 rounded shadow-sm whitespace-pre-wrap">
-        {summary}
-      </p>
-    </div>
+    <section className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+      <h3 className="mb-4 text-2xl font-bold text-[#0D2344]">Overview</h3>
+
+      <div className="space-y-4 text-slate-700">
+        {paragraphs.map((paragraph, index) => (
+          <p key={index} className="leading-8">
+            {paragraph}
+          </p>
+        ))}
+      </div>
+    </section>
   );
 }
+
+export default Summary;

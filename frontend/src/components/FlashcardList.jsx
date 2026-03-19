@@ -1,56 +1,50 @@
-import Flashcard from "./Flashcard";
-import { useRef } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react"; // You can also use Heroicons or others
+import { useState } from "react";
 
-const FlashcardList = ({ flashcards }) => {
-  const scrollRef = useRef(null);
+function FlashcardList({ flashcards }) {
+  const [openIndex, setOpenIndex] = useState(null);
 
-  const scroll = (direction) => {
-    const container = scrollRef.current;
-    const scrollAmount = 320; // Adjust based on card width + gap
-
-    if (container) {
-      container.scrollBy({
-        left: direction === "left" ? -scrollAmount : scrollAmount,
-        behavior: "smooth",
-      });
-    }
-  };
+  if (!flashcards.length) return null;
 
   return (
-    <div className="w-full max-w-5xl my-12 relative">
-      <h2 className="text-2xl font-semibold mb-4 text-center text-[#0D2344]">
-        Flashcards
-      </h2>
-
-      {/* Scroll Buttons */}
-      <button
-        className="absolute top-1/2 left-0 transform -translate-y-1/2 bg-white rounded-full shadow p-2 z-10"
-        onClick={() => scroll("left")}
-      >
-        <ChevronLeft size={24} />
-      </button>
-
-      <button
-        className="absolute top-1/2 right-0 transform -translate-y-1/2 bg-white rounded-full shadow p-2 z-10"
-        onClick={() => scroll("right")}
-      >
-        <ChevronRight size={24} />
-      </button>
-
-      {/* Scrollable container */}
-      <div
-        ref={scrollRef}
-        className="flex overflow-x-auto space-x-6 px-10 py-4 scrollbar-hide scroll-smooth"
-      >
-        {flashcards.map((card, index) => (
-          <div key={index} className="flex-shrink-0 w-80">
-            <Flashcard question={card.question} answer={card.answer} />
-          </div>
-        ))}
+    <section>
+      <div className="mb-4 flex items-center justify-between">
+        <h3 className="text-2xl font-bold text-[#0D2344]">Flashcards</h3>
+        <span className="rounded-full bg-slate-200 px-3 py-1 text-sm font-medium text-slate-700">
+          Click to reveal
+        </span>
       </div>
-    </div>
+
+      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+        {flashcards.map((card, index) => {
+          const isOpen = openIndex === index;
+
+          return (
+            <button
+              key={index}
+              type="button"
+              onClick={() => setOpenIndex(isOpen ? null : index)}
+              className="rounded-3xl bg-[#0D2344] p-6 text-left text-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
+            >
+              <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-blue-100">
+                Card {index + 1}
+              </p>
+
+              <p className="text-xl font-semibold leading-8">{card.question}</p>
+
+              {isOpen && (
+                <div className="mt-5 border-t border-blue-900 pt-4">
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-blue-100">
+                    Answer
+                  </p>
+                  <p className="leading-7 text-blue-50">{card.answer}</p>
+                </div>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </section>
   );
-};
+}
 
 export default FlashcardList;
