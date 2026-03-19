@@ -1,77 +1,81 @@
-from fastapi import FastAPI, Request,HTTPException
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from youtube_transcript_api import YouTubeTranscriptApi
 from urllib.parse import urlparse, parse_qs
-from fastapi.responses import JSONResponse
-
+from dotenv import load_dotenv
 import httpx
 import os
-from dotenv import load_dotenv
 
-#env for the api key
 load_dotenv()
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
 app = FastAPI()
 
-# Allow frontend requests (CORS)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # or ["http://localhost:5173"] for stricter setup
+    allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 @app.get("/")
 def root():
     return {"message": "SkillMate backend running"}
 
-# Function to extract video ID from YouTube URL
+
 def extract_video_id(youtube_url: str) -> str | None:
     parsed_url = urlparse(youtube_url)
 
-    # Case 1: https://www.youtube.com/watch?v=VIDEO_ID
     if "youtube.com" in parsed_url.netloc:
         return parse_qs(parsed_url.query).get("v", [None])[0]
 
-    # Case 2: https://youtu.be/VIDEO_ID
-    elif "youtu.be" in parsed_url.netloc:
+    if "youtu.be" in parsed_url.netloc:
         return parsed_url.path.lstrip("/")
 
     return None
 
-# Function to ask OpenRouter API for course generation
-async def ask_openrouter(prompt: str, model: str = "moonshotai/kimi-k2:free") -> str:
+
+async def ask_groq(prompt: str) -> str:
+    api_key = os.getenv("GROQ_API_KEY")
+
+    if not api_key:
+        raise Exception("GROQ_API_KEY is missing")
+
     headers = {
-        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+        "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
     }
 
     payload = {
-        "model": model,
+        "model": "llama-3.1-8b-instant",
         "messages": [
-            {"role": "system", "content": "You are a helpful course-building assistant."},
-            {"role": "user", "content": prompt}
-        ]
+            {
+                "role": "system",
+                "content": "You are a helpful course-building assistant."
+            },
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
+        "temperature": 0.7,
+        "max_tokens": 800,
     }
-    # print("Sending prompt length:", len(prompt))
-    # print("Prompt (preview):", prompt[:200])
-    # print("Headers:", headers)
-    # print("Payload:", payload)
 
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        response = await client.post(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers=headers,
+            json=payload,
+        )
 
-    async with httpx.AsyncClient() as client:
-        response = await client.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=payload)
-        response.raise_for_status()
+        if response.status_code != 200:
+            raise Exception(f"Groq error {response.status_code}: {response.text}")
+
         data = response.json()
         return data["choices"][0]["message"]["content"]
 
-
-from fastapi import FastAPI, Request, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-
-# ... existing imports ...
 
 @app.post("/generate")
 async def generate_course(request: Request):
@@ -83,7 +87,9 @@ async def generate_course(request: Request):
         raise HTTPException(status_code=400, detail="Invalid YouTube URL")
 
     try:
-        transcript = YouTubeTranscriptApi.get_transcript(video_id)
+        ytt_api = YouTubeTranscriptApi()
+        fetched_transcript = ytt_api.fetch(video_id)
+        full_text = " ".join(snippet.text for snippet in fetched_transcript)
     except Exception as e:
         return JSONResponse(
             status_code=502,
@@ -91,15 +97,14 @@ async def generate_course(request: Request):
         )
 
     try:
-        full_text = " ".join([entry["text"] for entry in transcript])
         truncated = full_text[:3000]
 
         prompt = f"""
 Summarize this YouTube transcript into a mini course.
-Break it into 3–5 modules with titles, learning objectives, and a short description for each.
+Break it into 3 to 5 modules with titles, learning objectives, and a short description for each.
 
 Then generate a section titled Flashcards:
-List 4–6 clearly formatted flashcards like this:
+List 4 to 6 clearly formatted flashcards like this:
 
 Flashcards:
 1. Q: ...
@@ -108,7 +113,8 @@ A: ...
 Here is the transcript:
 {truncated}
 """
-        llm_response = await ask_openrouter(prompt)
+
+        llm_response = await ask_groq(prompt)
 
         return {
             "video_id": video_id,
