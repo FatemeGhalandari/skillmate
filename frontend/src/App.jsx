@@ -77,6 +77,32 @@ function parseFlashcards(text = "") {
     .filter((card) => card.question && card.answer);
 }
 
+function getFriendlyErrorMessage(message = "", status) {
+  const lowerMessage = message.toLowerCase();
+
+  if (
+    status === 502 ||
+    lowerMessage.includes("transcript fetch failed") ||
+    lowerMessage.includes("youtube is blocking requests")
+  ) {
+    return "Could not get the transcript for this video. YouTube may be blocking the request, or the video may not have captions available. Try another video or run the backend locally.";
+  }
+
+  if (status === 400 || lowerMessage.includes("invalid youtube url")) {
+    return "Please enter a valid YouTube video URL.";
+  }
+
+  if (lowerMessage.includes("llm generation failed")) {
+    return "The transcript was found, but the course generation step failed. Please try again in a moment.";
+  }
+
+  if (message) {
+    return message;
+  }
+
+  return "Something went wrong. Please try again.";
+}
+
 function App() {
   const [url, setUrl] = useState("");
   const [courseTitle, setCourseTitle] = useState("");
@@ -87,11 +113,11 @@ function App() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Local:
-  // const BACKEND_URL = "http://127.0.0.1:8000/generate";
-
-  // Hosted:
-  const BACKEND_URL = "https://skillmate-backend.onrender.com/generate";
+  const BACKEND_URL =
+    import.meta.env.VITE_BACKEND_URL ||
+    (import.meta.env.DEV
+      ? "http://127.0.0.1:8000/generate"
+      : "https://skillmate-backend.onrender.com/generate");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -113,11 +139,13 @@ function App() {
         body: JSON.stringify({ url }),
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
       console.log("Backend response:", data);
 
       if (!response.ok || data.error) {
-        throw new Error(data.error || "Backend request failed.");
+        throw new Error(
+          getFriendlyErrorMessage(data.error || data.detail, response.status),
+        );
       }
 
       const fullSummary = data.summary || "";
@@ -131,7 +159,12 @@ function App() {
       setFlashcards(parsedFlashcards);
     } catch (err) {
       console.error("Error sending to backend:", err);
-      setError(err.message || "Something went wrong.");
+      const message =
+        err instanceof TypeError
+          ? "Could not connect to the backend. Make sure the server is running, then try again."
+          : err.message;
+
+      setError(getFriendlyErrorMessage(message));
     } finally {
       setLoading(false);
     }
