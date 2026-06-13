@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from youtube_transcript_api import YouTubeTranscriptApi
+from youtube_transcript_api.proxies import WebshareProxyConfig, GenericProxyConfig
 from urllib.parse import urlparse, parse_qs
 from dotenv import load_dotenv
 import httpx
@@ -35,6 +36,30 @@ def extract_video_id(youtube_url: str) -> str | None:
 
     return None
 
+def get_youtube_transcript_api():
+    webshare_username = os.getenv("WEBSHARE_PROXY_USERNAME")
+    webshare_password = os.getenv("WEBSHARE_PROXY_PASSWORD")
+
+    if webshare_username and webshare_password:
+        return YouTubeTranscriptApi(
+            proxy_config=WebshareProxyConfig(
+                proxy_username=webshare_username,
+                proxy_password=webshare_password,
+                filter_ip_locations=["us", "ca"],
+            )
+        )
+
+    generic_proxy_url = os.getenv("YOUTUBE_PROXY_URL")
+
+    if generic_proxy_url:
+        return YouTubeTranscriptApi(
+            proxy_config=GenericProxyConfig(
+                http_url=generic_proxy_url,
+                https_url=generic_proxy_url,
+            )
+        )
+
+    return YouTubeTranscriptApi()
 
 async def ask_groq(prompt: str) -> str:
     api_key = os.getenv("GROQ_API_KEY")
@@ -87,8 +112,8 @@ async def generate_course(request: Request):
         raise HTTPException(status_code=400, detail="Invalid YouTube URL")
 
     try:
-        ytt_api = YouTubeTranscriptApi()
-        fetched_transcript = ytt_api.fetch(video_id)
+        ytt_api = get_youtube_transcript_api()
+        fetched_transcript = ytt_api.fetch(video_id, languages=["en"])
         full_text = " ".join(snippet.text for snippet in fetched_transcript)
     except Exception as e:
         return JSONResponse(
